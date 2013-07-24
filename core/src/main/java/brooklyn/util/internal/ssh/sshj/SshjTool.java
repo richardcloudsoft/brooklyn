@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import brooklyn.util.internal.ssh.SshToolBashHelper;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.PTYMode;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -264,27 +265,37 @@ public class SshjTool extends SshAbstractTool implements SshTool {
     }
 
     @Override
+    public SshToolBashHelper getBashHelper() {
+        return SshjToolBashHelper.INSTANCE;
+    }
+
+    @Override
+    @Deprecated
     public int execScript(Map<String,?> props, List<String> commands) {
-        return SshjToolBashHelper.INSTANCE.execScript(this, props, commands);
+        return getBashHelper().execScript(this, props, commands);
     }
-    
+
     @Override
+    @Deprecated
     public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return SshjToolBashHelper.INSTANCE.execScript(this, props, commands, env);
+        return getBashHelper().execScript(this, props, commands, env);
     }
 
+    @Deprecated
     public int execShellDirect(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return SshjToolBashHelper.INSTANCE.execShellDirect(this, props, commands, env);
+        return ((SshjToolBashHelper)getBashHelper()).execShellDirect(this, props, commands, env);
     }
 
     @Override
+    @Deprecated
     public int execCommands(Map<String,?> props, List<String> commands) {
-        return SshjToolBashHelper.INSTANCE.execCommands(this, props, commands);
+        return getBashHelper().execCommands(this, props, commands);
     }
 
     @Override
+    @Deprecated
     public int execCommands(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return SshjToolBashHelper.INSTANCE.execCommands(this, props, commands, env);
+        return getBashHelper().execCommands(this, props, commands, env);
     }
 
     protected void checkConnected() {

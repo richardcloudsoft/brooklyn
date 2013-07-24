@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import brooklyn.util.internal.ssh.SshToolBashHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -217,25 +218,34 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
     }
 
     @Override
+    public SshToolBashHelper getBashHelper() {
+        return SshCliToolBashHelper.INSTANCE;
+    }
+
+    @Override
+    @Deprecated
     public int execScript(Map<String,?> props, List<String> commands) {
-        return SshCliToolBashHelper.INSTANCE.execScript(this, props, commands);
+        return getBashHelper().execScript(this, props, commands);
     }
-    
+
     @Override
+    @Deprecated
     public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return SshCliToolBashHelper.INSTANCE.execScript(this, props, commands, env);
+        return getBashHelper().execScript(this, props, commands, env);
     }
 
     @Override
+    @Deprecated
     public int execCommands(Map<String,?> props, List<String> commands) {
-        return SshCliToolBashHelper.INSTANCE.execCommands(this, props, commands);
+        return getBashHelper().execCommands(this, props, commands);
     }
 
     @Override
+    @Deprecated
     public int execCommands(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return SshCliToolBashHelper.INSTANCE.execCommands(this, props, commands, env);
+        return getBashHelper().execCommands(this, props, commands, env);
     }
-    
+
     private int scpToServer(Map<String,?> props, File local, String remote) {
         String to = (Strings.isEmpty(getUsername()) ? "" : getUsername()+"@")+getHostAddress()+":"+remote;
         return scpExec(props, local.getAbsolutePath(), to);

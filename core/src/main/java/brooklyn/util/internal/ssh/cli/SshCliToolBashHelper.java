@@ -6,6 +6,7 @@ import brooklyn.util.collections.MutableMap;
 import brooklyn.util.flags.TypeCoercions;
 import brooklyn.util.internal.ssh.BashHelper;
 import brooklyn.util.internal.ssh.SshTool;
+import brooklyn.util.internal.ssh.SshToolBashHelper;
 import brooklyn.util.ssh.CommonCommands;
 import brooklyn.util.text.Identifiers;
 import brooklyn.util.text.StringEscapes;
@@ -21,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public enum SshCliToolBashHelper {
+public enum SshCliToolBashHelper implements SshToolBashHelper {
 
     INSTANCE;
 

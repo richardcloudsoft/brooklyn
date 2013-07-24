@@ -2,6 +2,7 @@ package brooklyn.util.internal.ssh.sshj;
 
 import brooklyn.util.internal.ssh.BashHelper;
 import brooklyn.util.internal.ssh.SshTool;
+import brooklyn.util.internal.ssh.SshToolBashHelper;
 import brooklyn.util.ssh.CommonCommands;
 import brooklyn.util.text.Identifiers;
 import com.google.common.base.Joiner;
@@ -14,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public enum SshjToolBashHelper {
+public enum SshjToolBashHelper implements SshToolBashHelper {
 
     INSTANCE;
 

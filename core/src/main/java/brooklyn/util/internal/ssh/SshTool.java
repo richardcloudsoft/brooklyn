@@ -114,11 +114,13 @@ public interface SshTool {
      * 
      * @throws SshException If failed to connect
      */
+    @Deprecated
     public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env);
 
     /**
      * @see execScript(Map, List, Map)
      */
+    @Deprecated
     public int execScript(Map<String,?> props, List<String> commands);
 
     /**
@@ -137,11 +139,13 @@ public interface SshTool {
      * @return exit status of commands
      * @throws SshException If failed to connect
      */
+    @Deprecated
     public int execCommands(Map<String,?> properties, List<String> commands, Map<String,?> env);
 
     /**
      * @see execuCommands(Map, List, Map)
      */
+    @Deprecated
     public int execCommands(Map<String,?> properties, List<String> commands);
 
     /**
@@ -221,4 +225,11 @@ public interface SshTool {
      * @return exit code (not supported by all SshTool implementations, sometimes just returning 0)
      */
     public int copyFromServer(Map<String,?> props, String pathAndFileOnRemoteServer, File local);
+
+    /**
+     * Get an instance of SshToolBashHelper that works with this class.
+     *
+     * @return an instance of SshToolBashHelper
+     */
+    public SshToolBashHelper getBashHelper();
 }
