@@ -388,8 +388,9 @@ public abstract class SshToolIntegrationTest {
         String nonExistantCmd = "acmdthatdoesnotexist";
         tool.execCommands(ImmutableMap.of("out", out, "err", err), ImmutableList.of(nonExistantCmd));
         String errMsg = new String(err.toByteArray());
-        assertTrue(errMsg.contains(nonExistantCmd+": command not found\n"), "errMsg="+errMsg+"; out="+out+"; err="+err);
-        
+        String errorMessageBash = nonExistantCmd + ": command not found\n";
+        String errorMessageZsh = "command not found: " + nonExistantCmd + "\n";
+        assertTrue(errMsg.contains(errorMessageBash) || errMsg.contains(errorMessageZsh), "errMsg="+errMsg+"; out="+out+"; err="+err);
     }
 
     @Test(groups = {"Integration"})

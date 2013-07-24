@@ -194,6 +194,31 @@ public class SshjTool extends SshAbstractTool implements SshTool {
     }
     
     @Override
+    public int executeInteractive(Map<String, ?> propertiess, List<String> input) {
+        OutputStream out = getOptionalVal(propertiess, PROP_OUT_STREAM);
+        OutputStream err = getOptionalVal(propertiess, PROP_ERR_STREAM);
+
+        if (LOG.isTraceEnabled()) LOG.trace("Running shell command at {}: {}", host, input);
+
+        Integer result = acquire(new ShellAction(input, out, err));
+        if (LOG.isTraceEnabled()) LOG.trace("Running shell command at {} completed: return status {}", host, result);
+        return result != null ? result : -1;
+    }
+
+    @Override
+    public int executeCommand(Map<String, ?> props, String singlecmd) {
+        OutputStream out = getOptionalVal(props, PROP_OUT_STREAM);
+        OutputStream err = getOptionalVal(props, PROP_ERR_STREAM);
+
+        if (LOG.isTraceEnabled()) LOG.trace("Running command at {}: {}", host, singlecmd);
+
+        Command result = acquire(new ExecAction(singlecmd, out, err));
+        if (LOG.isTraceEnabled()) LOG.trace("Running command at {} completed: exit code {}", host, result.getExitStatus());
+        // FIXME this can NPE if no exit status is received (observed on kill `ps aux | grep thing-to-grep-for | awk {print $2}`
+        return result.getExitStatus();
+    }
+
+    @Override
     public int copyToServer(java.util.Map<String,?> props, byte[] contents, String pathAndFileOnRemoteServer) {
         return copyToServer(props, newInputStreamSupplier(contents), contents.length, pathAndFileOnRemoteServer);
     }
@@ -299,21 +324,14 @@ public class SshjTool extends SshAbstractTool implements SshTool {
     }
 
     public int execShellDirect(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        OutputStream out = getOptionalVal(props, PROP_OUT_STREAM);
-        OutputStream err = getOptionalVal(props, PROP_ERR_STREAM);
-        
         List<String> cmdSequence = toCommandSequence(commands, env);
         List<String> allcmds = ImmutableList.<String>builder()
                 .add(getOptionalVal(props, PROP_DIRECT_HEADER))
                 .addAll(cmdSequence)
                 .add("exit $?")
                 .build();
-        
-        if (LOG.isTraceEnabled()) LOG.trace("Running shell command at {}: {}", host, allcmds);
-        
-        Integer result = acquire(new ShellAction(allcmds, out, err));
-        if (LOG.isTraceEnabled()) LOG.trace("Running shell command at {} completed: return status {}", host, result);
-        return result != null ? result : -1;
+
+        return executeInteractive(props, allcmds);
     }
 
     @Override
@@ -326,19 +344,12 @@ public class SshjTool extends SshAbstractTool implements SshTool {
         if (props.containsKey("blocks") && props.get("blocks") == Boolean.FALSE) {
             throw new IllegalArgumentException("Cannot exec non-blocking: command="+commands);
         }
-        OutputStream out = getOptionalVal(props, PROP_OUT_STREAM);
-        OutputStream err = getOptionalVal(props, PROP_ERR_STREAM);
         String separator = getOptionalVal(props, PROP_SEPARATOR);
 
         List<String> allcmds = toCommandSequence(commands, env);
         String singlecmd = Joiner.on(separator).join(allcmds);
 
-        if (LOG.isTraceEnabled()) LOG.trace("Running command at {}: {}", host, singlecmd);
-        
-        Command result = acquire(new ExecAction(singlecmd, out, err));
-        if (LOG.isTraceEnabled()) LOG.trace("Running command at {} completed: exit code {}", host, result.getExitStatus());
-        // FIXME this can NPE if no exit status is received (observed on kill `ps aux | grep thing-to-grep-for | awk {print $2}`
-        return result.getExitStatus();
+        return executeCommand(props, singlecmd);
     }
 
     protected void checkConnected() {

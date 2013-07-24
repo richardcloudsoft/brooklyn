@@ -113,6 +113,58 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
     }
 
     @Override
+    public int executeInteractive(Map<String, ?> properties, List<String> command) {
+        throw new UnsupportedOperationException("SshCliTool does not yet implement this method");
+    }
+
+    @Override
+    public int executeCommand(Map<String, ?> props, String command) {
+        File tempKeyFile = null;
+        try {
+            List<String> cmd = Lists.newArrayList();
+            cmd.add(getOptionalVal(props, PROP_SSH_EXECUTABLE, sshExecutable));
+            String propsFlags = getOptionalVal(props, PROP_SSH_FLAGS, sshFlags);
+            if (propsFlags!=null && propsFlags.trim().length()>0)
+                cmd.addAll(Arrays.asList(propsFlags.trim().split(" ")));
+            if (privateKeyFile != null) {
+                cmd.add("-i");
+                cmd.add(privateKeyFile.getAbsolutePath());
+            } else if (privateKeyData != null) {
+                tempKeyFile = writeTempFile(privateKeyData);
+                cmd.add("-i");
+                cmd.add(tempKeyFile.getAbsolutePath());
+            }
+            if (!strictHostKeyChecking) {
+                cmd.add("-o");
+                cmd.add("StrictHostKeyChecking=no");
+            }
+            if (port != 22) {
+                cmd.add("-P");
+                cmd.add(""+port);
+            }
+            if (allocatePTY) {
+                // have to be careful with double -tt as it can leave a shell session active
+                // when done from bash (ie  ssh -tt localhost < /tmp/myscript.sh);
+                // hover that doesn't seem to be a problem the way we use it from brooklyn
+                // (and note single -t doesn't work _programmatically_ since the input isn't a terminal)
+                cmd.add("-tt");
+            }
+            cmd.add((Strings.isEmpty(getUsername()) ? "" : getUsername()+"@")+getHostAddress());
+
+            cmd.add(command);
+
+            if (LOG.isTraceEnabled()) LOG.trace("Executing ssh with command: {} (with {})", command, cmd);
+            int result = execProcess(props, cmd);
+
+            if (LOG.isTraceEnabled()) LOG.trace("Executed command: {}; exit code {}", cmd, result);
+            return result;
+
+        } finally {
+            if (tempKeyFile != null) tempKeyFile.delete();
+        }
+    }
+
+    @Override
     public int copyToServer(java.util.Map<String,?> props, byte[] contents, String pathAndFileOnRemoteServer) {
         return copyTempFileToServer(props, writeTempFile(contents), pathAndFileOnRemoteServer);
     }
@@ -250,59 +302,17 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
     }
     
     private int sshExec(Map<String,?> props, String command) {
-        File tempKeyFile = null;
-        try {
-            List<String> cmd = Lists.newArrayList();
-            cmd.add(getOptionalVal(props, PROP_SSH_EXECUTABLE, sshExecutable));
-            String propsFlags = getOptionalVal(props, PROP_SSH_FLAGS, sshFlags);
-            if (propsFlags!=null && propsFlags.trim().length()>0)
-                cmd.addAll(Arrays.asList(propsFlags.trim().split(" ")));
-            if (privateKeyFile != null) {
-                cmd.add("-i");
-                cmd.add(privateKeyFile.getAbsolutePath());
-            } else if (privateKeyData != null) {
-                tempKeyFile = writeTempFile(privateKeyData);
-                cmd.add("-i");
-                cmd.add(tempKeyFile.getAbsolutePath());
-            }
-            if (!strictHostKeyChecking) {
-                cmd.add("-o");
-                cmd.add("StrictHostKeyChecking=no");
-            }
-            if (port != 22) {
-                cmd.add("-P");
-                cmd.add(""+port);
-            }
-            if (allocatePTY) {
-                // have to be careful with double -tt as it can leave a shell session active
-                // when done from bash (ie  ssh -tt localhost < /tmp/myscript.sh);
-                // hover that doesn't seem to be a problem the way we use it from brooklyn
-                // (and note single -t doesn't work _programmatically_ since the input isn't a terminal)
-                cmd.add("-tt");
-            }
-            cmd.add((Strings.isEmpty(getUsername()) ? "" : getUsername()+"@")+getHostAddress());
-            
-            cmd.add("bash -c \""+command+"\"");
-            // previously we tried these approaches:
-            //cmd.add("$(<"+tempCmdFile.getAbsolutePath()+")");
-            // only pays attention to the first word; the "; echo Executing ..." get treated as arguments
-            // to the script in the first word, when invoked from java (when invoked from prompt the behaviour is as desired)
-            //cmd.add("\""+command+"\"");
-            // only works if command is a single word
-            //cmd.add(tempCmdFile.getAbsolutePath());
-            // above of course only works if the metafile is copied across
-            
-            if (LOG.isTraceEnabled()) LOG.trace("Executing ssh with command: {} (with {})", command, cmd);
-            int result = execProcess(props, cmd);
-            
-            if (LOG.isTraceEnabled()) LOG.trace("Executed command: {}; exit code {}", cmd, result);
-            return result;
-            
-        } finally {
-            if (tempKeyFile != null) tempKeyFile.delete();
-        }
+        return executeCommand(props, "bash -c \"" + command + "\"");
+        // previously we tried these approaches:
+        //cmd.add("$(<"+tempCmdFile.getAbsolutePath()+")");
+        // only pays attention to the first word; the "; echo Executing ..." get treated as arguments
+        // to the script in the first word, when invoked from java (when invoked from prompt the behaviour is as desired)
+        //cmd.add("\""+command+"\"");
+        // only works if command is a single word
+        //cmd.add(tempCmdFile.getAbsolutePath());
+        // above of course only works if the metafile is copied across
     }
-    
+
     private int execProcess(Map<String,?> props, List<String> cmd) {
         OutputStream out = getOptionalVal(props, PROP_OUT_STREAM);
         OutputStream err = getOptionalVal(props, PROP_ERR_STREAM);

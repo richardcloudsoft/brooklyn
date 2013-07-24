@@ -139,6 +139,41 @@ public interface SshTool {
     public int execCommands(Map<String,?> properties, List<String> commands);
 
     /**
+     * Open an ssh session and send a list of strings to the remote session.
+     *
+     * This operation is equivalent to running "ssh" without a command, and then typing the given list of commands to
+     * the input stream of the remote session. Each string in the list is followed by a newline.
+     *
+     * Optional properties are:
+     * <ul>
+     *   <li>'out' {@link OutputStream} - see {@link PROP_OUT_STREAM}
+     *   <li>'err' {@link OutputStream} - see {@link PROP_ERR_STREAM}
+     *   <li>'separator', defaulting to ";" - see {@link PROP_SEPARATOR}
+     * </ul>
+     *
+     * @return exit status of commands
+     * @throws SshException If failed to connect
+     */
+    public int executeInteractive(Map<String,?> properties, List<String> command);
+
+    /**
+     * Execute a command in an ssh session.
+     *
+     * This operation is equivalent to running "ssh" and passing a command as an option to the SSH command.
+     *
+     * Optional properties are:
+     * <ul>
+     *   <li>'out' {@link OutputStream} - see {@link PROP_OUT_STREAM}
+     *   <li>'err' {@link OutputStream} - see {@link PROP_ERR_STREAM}
+     *   <li>'separator', defaulting to ";" - see {@link PROP_SEPARATOR}
+     * </ul>
+     *
+     * @return exit status of commands
+     * @throws SshException If failed to connect
+     */
+    public int executeCommand(Map<String,?> properties, String command);
+
+    /**
      * Copies the file to the server at the given path.
      * If path is null, empty, '.', '..', or ends with '/' then file name is used.
      * <p>
