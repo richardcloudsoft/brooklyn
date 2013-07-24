@@ -101,54 +101,6 @@ public interface SshTool {
     public String getHost();
 
     /**
-     * Executes the set of commands in a shell script. Blocks until completion.
-     * <p>
-     * 
-     * Optional properties are:
-     * <ul>
-     *   <li>'out' {@link OutputStream} - see {@link PROP_OUT_STREAM}
-     *   <li>'err' {@link OutputStream} - see {@link PROP_ERR_STREAM}
-     * </ul>
-     * 
-     * @return exit status of script
-     * 
-     * @throws SshException If failed to connect
-     */
-    @Deprecated
-    public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env);
-
-    /**
-     * @see execScript(Map, List, Map)
-     */
-    @Deprecated
-    public int execScript(Map<String,?> props, List<String> commands);
-
-    /**
-     * Executes the set of commands using ssh exec.
-     * 
-     * This is generally more efficient than shell, but is not suitable if you need 
-     * env values which are only set on a fully-fledged shell.
-     *
-     * Optional properties are:
-     * <ul>
-     *   <li>'out' {@link OutputStream} - see {@link PROP_OUT_STREAM}
-     *   <li>'err' {@link OutputStream} - see {@link PROP_ERR_STREAM}
-     *   <li>'separator', defaulting to ";" - see {@link PROP_SEPARATOR}
-     * </ul>
-     * 
-     * @return exit status of commands
-     * @throws SshException If failed to connect
-     */
-    @Deprecated
-    public int execCommands(Map<String,?> properties, List<String> commands, Map<String,?> env);
-
-    /**
-     * @see execuCommands(Map, List, Map)
-     */
-    @Deprecated
-    public int execCommands(Map<String,?> properties, List<String> commands);
-
-    /**
      * Open an ssh session and send a list of strings to the remote session.
      *
      * This operation is equivalent to running "ssh" without a command, and then typing the given list of commands to

@@ -222,30 +222,6 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
         return SshCliToolBashHelper.INSTANCE;
     }
 
-    @Override
-    @Deprecated
-    public int execScript(Map<String,?> props, List<String> commands) {
-        return getBashHelper().execScript(this, props, commands);
-    }
-
-    @Override
-    @Deprecated
-    public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return getBashHelper().execScript(this, props, commands, env);
-    }
-
-    @Override
-    @Deprecated
-    public int execCommands(Map<String,?> props, List<String> commands) {
-        return getBashHelper().execCommands(this, props, commands);
-    }
-
-    @Override
-    @Deprecated
-    public int execCommands(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return getBashHelper().execCommands(this, props, commands, env);
-    }
-
     private int scpToServer(Map<String,?> props, File local, String remote) {
         String to = (Strings.isEmpty(getUsername()) ? "" : getUsername()+"@")+getHostAddress()+":"+remote;
         return scpExec(props, local.getAbsolutePath(), to);

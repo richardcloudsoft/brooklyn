@@ -269,35 +269,6 @@ public class SshjTool extends SshAbstractTool implements SshTool {
         return SshjToolBashHelper.INSTANCE;
     }
 
-    @Override
-    @Deprecated
-    public int execScript(Map<String,?> props, List<String> commands) {
-        return getBashHelper().execScript(this, props, commands);
-    }
-
-    @Override
-    @Deprecated
-    public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return getBashHelper().execScript(this, props, commands, env);
-    }
-
-    @Deprecated
-    public int execShellDirect(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return ((SshjToolBashHelper)getBashHelper()).execShellDirect(this, props, commands, env);
-    }
-
-    @Override
-    @Deprecated
-    public int execCommands(Map<String,?> props, List<String> commands) {
-        return getBashHelper().execCommands(this, props, commands);
-    }
-
-    @Override
-    @Deprecated
-    public int execCommands(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        return getBashHelper().execCommands(this, props, commands, env);
-    }
-
     protected void checkConnected() {
         if (!isConnected()) {
             throw new IllegalStateException(String.format("(%s) ssh not connected!", toString()));
