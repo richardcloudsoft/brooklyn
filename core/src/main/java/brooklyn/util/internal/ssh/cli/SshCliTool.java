@@ -113,6 +113,11 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
     }
 
     @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
     public int executeInteractive(Map<String, ?> properties, List<String> command) {
         throw new UnsupportedOperationException("SshCliTool does not yet implement this method");
     }
@@ -166,12 +171,22 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
 
     @Override
     public int copyToServer(java.util.Map<String,?> props, byte[] contents, String pathAndFileOnRemoteServer) {
-        return copyTempFileToServer(props, writeTempFile(contents), pathAndFileOnRemoteServer);
+        File f = writeTempFile(contents);
+        try {
+            return copyToServer(props, f, pathAndFileOnRemoteServer);
+        } finally {
+            f.delete();
+        }
     }
     
     @Override
     public int copyToServer(java.util.Map<String,?> props, InputStream contents, String pathAndFileOnRemoteServer) {
-        return copyTempFileToServer(props, writeTempFile(contents), pathAndFileOnRemoteServer);
+        File f = writeTempFile(contents);
+        try {
+            return copyToServer(props, f, pathAndFileOnRemoteServer);
+        } finally {
+            f.delete();
+        }
     }
     
     @Override
@@ -196,14 +211,6 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
         return result;
     }
 
-    private int copyTempFileToServer(Map<String,?> props, File f, String pathAndFileOnRemoteServer) {
-        try {
-            return copyToServer(props, f, pathAndFileOnRemoteServer);
-        } finally {
-            f.delete();
-        }
-    }
-
     @Override
     public int copyFromServer(Map<String,?> props, String pathAndFileOnRemoteServer, File localFile) {
         return scpFromServer(props, pathAndFileOnRemoteServer, localFile);
@@ -211,45 +218,22 @@ public class SshCliTool extends SshAbstractTool implements SshTool {
 
     @Override
     public int execScript(Map<String,?> props, List<String> commands) {
-        return execScript(props, commands, Collections.<String,Object>emptyMap());
+        return SshCliToolBashHelper.INSTANCE.execScript(this, props, commands);
     }
     
     @Override
     public int execScript(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        String separator = getOptionalVal(props, PROP_SEPARATOR);
-        String scriptDir = getOptionalVal(props, PROP_SCRIPT_DIR);
-        Boolean runAsRoot = getOptionalVal(props, PROP_RUN_AS_ROOT);
-        Boolean noExtraOutput = getOptionalVal(props, PROP_NO_EXTRA_OUTPUT);
-        String scriptPath = scriptDir+"/brooklyn-"+System.currentTimeMillis()+"-"+Identifiers.makeRandomId(8)+".sh";
-
-        String scriptContents = toScript(props, commands, env);
-        
-        if (LOG.isTraceEnabled()) LOG.trace("Running shell command at {} as script: {}", host, scriptContents);
-        
-        copyTempFileToServer(ImmutableMap.of("permissions", "0700"), writeTempFile(scriptContents), scriptPath);
-        
-        // use "-f" because some systems have "rm" aliased to "rm -i"; use "< /dev/null" to guarantee doesn't hang
-        String cmd = 
-                (runAsRoot ? CommonCommands.sudo(scriptPath) : scriptPath) + " < /dev/null"+separator+
-                "RESULT=\\$?"+separator+
-                (noExtraOutput==null || !noExtraOutput ? "echo Executed "+scriptPath+", result \\$RESULT"+separator : "")+
-                "rm -f "+scriptPath+" < /dev/null"+separator+
-                "exit \\$RESULT";
-        Integer result = sshExec(props, cmd);
-        return result != null ? result : -1;
+        return SshCliToolBashHelper.INSTANCE.execScript(this, props, commands, env);
     }
 
     @Override
     public int execCommands(Map<String,?> props, List<String> commands) {
-        return execCommands(props, commands, Collections.<String,Object>emptyMap());
+        return SshCliToolBashHelper.INSTANCE.execCommands(this, props, commands);
     }
 
     @Override
     public int execCommands(Map<String,?> props, List<String> commands, Map<String,?> env) {
-        Map<String,Object> props2 = new MutableMap<String,Object>();
-        if (props!=null) props2.putAll(props);
-        props2.put(SshTool.PROP_NO_EXTRA_OUTPUT.getName(), true);
-        return execScript(props2, commands, env);
+        return SshCliToolBashHelper.INSTANCE.execCommands(this, props, commands, env);
     }
     
     private int scpToServer(Map<String,?> props, File local, String remote) {

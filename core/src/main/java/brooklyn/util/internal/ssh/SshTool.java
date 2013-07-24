@@ -95,6 +95,12 @@ public interface SshTool {
     public boolean isConnected();
 
     /**
+     * The host the instance is connected to.
+     * @return the host that this instance is connected to.
+     */
+    public String getHost();
+
+    /**
      * Executes the set of commands in a shell script. Blocks until completion.
      * <p>
      * 
