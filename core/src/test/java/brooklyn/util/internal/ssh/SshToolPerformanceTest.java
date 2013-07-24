@@ -108,7 +108,7 @@ public abstract class SshToolPerformanceTest {
         
         tool = newSshTool(MutableMap.of("host", "localhost"));
         tool.connect();
-        int result = tool.execScript(flags, cmds);
+        int result = tool.getBashHelper().execScript(tool, flags, cmds);
         tool.disconnect();
         
         int outlen = out.toByteArray().length;

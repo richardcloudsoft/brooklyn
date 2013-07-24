@@ -110,13 +110,13 @@ public abstract class SshToolIntegrationTest {
 
     @Test(groups = {"Integration"})
     public void testExecScriptReturningNonZeroExitCode() throws Exception {
-        int exitcode = tool.execScript(MutableMap.<String,Object>of(), ImmutableList.of("exit 123"));
+        int exitcode = tool.getBashHelper().execScript(tool, MutableMap.<String,Object>of(), ImmutableList.of("exit 123"));
         assertEquals(exitcode, 123);
     }
 
     @Test(groups = {"Integration"})
     public void testExecScriptReturningZeroExitCode() throws Exception {
-        int exitcode = tool.execScript(MutableMap.<String,Object>of(), ImmutableList.of("date"));
+        int exitcode = tool.getBashHelper().execScript(tool, MutableMap.<String,Object>of(), ImmutableList.of("date"));
         assertEquals(exitcode, 0);
     }
 
@@ -166,7 +166,7 @@ public abstract class SshToolIntegrationTest {
     @Test(groups = {"Integration"})
     public void testExecScriptAbortsOnCommandFailure() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int exitcode = tool.execScript(ImmutableMap.of("out", out), ImmutableList.of("export MYPROP=myval", "acmdthatdoesnotexist", "echo val is $MYPROP"));
+        int exitcode = tool.getBashHelper().execScript(tool, ImmutableMap.of("out", out), ImmutableList.of("export MYPROP=myval", "acmdthatdoesnotexist", "echo val is $MYPROP"));
         String outstr = new String(out.toByteArray());
 
         assertFalse(outstr.contains("val is myval"), "out="+out);
@@ -242,13 +242,13 @@ public abstract class SshToolIntegrationTest {
 
     @Test(groups = {"Integration"})
     public void testExecReturningNonZeroExitCode() throws Exception {
-        int exitcode = tool.execCommands(MutableMap.<String,Object>of(), ImmutableList.of("exit 123"));
+        int exitcode = tool.getBashHelper().execCommands(tool, MutableMap.<String,Object>of(), ImmutableList.of("exit 123"));
         assertEquals(exitcode, 123);
     }
 
     @Test(groups = {"Integration"})
     public void testExecReturningZeroExitCode() throws Exception {
-        int exitcode = tool.execCommands(MutableMap.<String,Object>of(), ImmutableList.of("date"));
+        int exitcode = tool.getBashHelper().execCommands(tool, MutableMap.<String,Object>of(), ImmutableList.of("date"));
         assertEquals(exitcode, 0);
     }
 
@@ -375,7 +375,7 @@ public abstract class SshToolIntegrationTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         String nonExistantCmd = "acmdthatdoesnotexist";
-        tool.execScript(ImmutableMap.of("out", out, "err", err), ImmutableList.of(nonExistantCmd));
+        tool.getBashHelper().execScript(tool, ImmutableMap.of("out", out, "err", err), ImmutableList.of(nonExistantCmd));
         assertTrue(new String(err.toByteArray()).contains(nonExistantCmd+": command not found"), "out="+out+"; err="+err);
     }
 
@@ -386,7 +386,7 @@ public abstract class SshToolIntegrationTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         String nonExistantCmd = "acmdthatdoesnotexist";
-        tool.execCommands(ImmutableMap.of("out", out, "err", err), ImmutableList.of(nonExistantCmd));
+        tool.getBashHelper().execCommands(tool, ImmutableMap.of("out", out, "err", err), ImmutableList.of(nonExistantCmd));
         String errMsg = new String(err.toByteArray());
         String errorMessageBash = nonExistantCmd + ": command not found\n";
         String errorMessageZsh = "command not found: " + nonExistantCmd + "\n";
@@ -424,7 +424,7 @@ public abstract class SshToolIntegrationTest {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         props.put("out", out);
         props.put("err", err);
-        int exitcode = localtool.execScript(props, Arrays.asList("echo hello err > /dev/stderr"), null);
+        int exitcode = localtool.getBashHelper().execScript(localtool, props, Arrays.asList("echo hello err > /dev/stderr"), null);
         assertFalse(out.toString().contains("hello err"), "hello found where it shouldn't have been, in stdout: "+out);
         assertTrue(err.toString().contains("hello err"), "no hello in stderr: "+err);
         assertEquals(0, exitcode);
@@ -439,7 +439,7 @@ public abstract class SshToolIntegrationTest {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         props.put("out", out);
         props.put("err", err);
-        int exitcode = localtool.execScript(props, Arrays.asList("echo hello err > /dev/stderr"), null);
+        int exitcode = localtool.getBashHelper().execScript(localtool, props, Arrays.asList("echo hello err > /dev/stderr"), null);
         assertTrue(out.toString().contains("hello err"), "no hello in output: "+out+" (err is '"+err+"')");
         assertFalse(err.toString().contains("hello err"), "hello found in stderr: "+err);
         assertEquals(0, exitcode);
@@ -455,7 +455,7 @@ public abstract class SshToolIntegrationTest {
         props.put("out", out);
         props.put("err", err);
         props.put(SshTool.PROP_RUN_AS_ROOT.getName(), true);
-        int exitcode = localtool.execScript(props, Arrays.asList("whoami"), null);
+        int exitcode = localtool.getBashHelper().execScript(localtool, props, Arrays.asList("whoami"), null);
         assertTrue(out.toString().contains("root"), "not running as root; whoami is: "+out+" (err is '"+err+"')");
         assertEquals(0, exitcode);
     }
@@ -471,7 +471,7 @@ public abstract class SshToolIntegrationTest {
         tools.add(localtool);
         localtool.connect();
         
-        assertEquals(tool.execScript(MutableMap.<String,Object>of(), ImmutableList.of("date")), 0);
+        assertEquals(tool.getBashHelper().execScript(tool, MutableMap.<String,Object>of(), ImmutableList.of("date")), 0);
 
         // Also needs the negative test to prove that we're really using an ssh-key with a passphrase
         try {
@@ -504,7 +504,7 @@ public abstract class SshToolIntegrationTest {
         props.put("out", out);
         props.put("err", err);
         props.put(SshTool.PROP_NO_EXTRA_OUTPUT.getName(), true);
-        int exitcode = localtool.execScript(props, Arrays.asList("echo hello world"), null);
+        int exitcode = localtool.getBashHelper().execScript(localtool, props, Arrays.asList("echo hello world"), null);
         assertFalse(out.toString().contains("Executed"), "Executed should not have displayed: "+out);
         assertEquals(out.toString().trim(), "hello world");
         assertEquals(0, exitcode);
@@ -559,7 +559,7 @@ public abstract class SshToolIntegrationTest {
 
     protected String execCommands(List<String> cmds, Map<String,?> env) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        tool.execCommands(ImmutableMap.of("out", out), cmds, env);
+        tool.getBashHelper().execCommands(tool, ImmutableMap.of("out", out), cmds, env);
         return new String(out.toByteArray());
     }
 
@@ -582,7 +582,7 @@ public abstract class SshToolIntegrationTest {
         Map<String, Object> props2 = new LinkedHashMap<String, Object>(props);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         props2.put("out", out);
-        int exitcode = tool.execScript(props2, cmds, env);
+        int exitcode = tool.getBashHelper().execScript(tool, props2, cmds, env);
         String outstr = new String(out.toByteArray());
         assertEquals(exitcode, 0, outstr);
         return outstr;

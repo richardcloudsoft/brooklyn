@@ -55,7 +55,7 @@ public class SshjToolIntegrationTest extends SshToolIntegrationTest {
         
         tools.add(localtool);
         try {
-            localtool.execScript(ImmutableMap.<String,Object>of(), ImmutableList.of("true"));
+            localtool.getBashHelper().execScript(localtool, ImmutableMap.<String,Object>of(), ImmutableList.of("true"));
             fail();
         } catch (SshException e) {
             if (!e.toString().contains("out of retries")) throw e;
@@ -79,7 +79,7 @@ public class SshjToolIntegrationTest extends SshToolIntegrationTest {
         };
         
         tools.add(localtool);
-        localtool.execScript(ImmutableMap.<String,Object>of(), ImmutableList.of("true"));
+        localtool.getBashHelper().execScript(localtool, ImmutableMap.<String,Object>of(), ImmutableList.of("true"));
         assertEquals(callCount.get(), successOnAttempt);
     }
 
@@ -100,7 +100,7 @@ public class SshjToolIntegrationTest extends SshToolIntegrationTest {
         
         tools.add(localtool);
         try {
-            localtool.execScript(ImmutableMap.<String,Object>of(), ImmutableList.of("true"));
+            localtool.getBashHelper().execScript(localtool, ImmutableMap.<String,Object>of(), ImmutableList.of("true"));
             fail();
         } catch (SshException e) {
             if (!e.toString().contains("out of time")) throw e;
@@ -114,7 +114,7 @@ public class SshjToolIntegrationTest extends SshToolIntegrationTest {
     
     private String execShellDirect(List<String> cmds, Map<String,?> env) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int exitcode = ((SshjTool)tool).execShellDirect(ImmutableMap.of("out", out), cmds, env);
+        int exitcode = ((SshjToolBashHelper)tool.getBashHelper()).execShellDirect(tool, ImmutableMap.of("out", out), cmds, env);
         String outstr = new String(out.toByteArray());
         assertEquals(exitcode, 0, outstr);
         return outstr;
@@ -130,7 +130,7 @@ public class SshjToolIntegrationTest extends SshToolIntegrationTest {
     
     private String execShellDirectWithTerminalEmulation(List<String> cmds, Map<String,?> env) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int exitcode = ((SshjTool)tool).execShellDirect(ImmutableMap.of("allocatePTY", true, "out", out), cmds, env);
+        int exitcode = ((SshjToolBashHelper)tool.getBashHelper()).execShellDirect(tool, ImmutableMap.of("allocatePTY", true, "out", out), cmds, env);
         String outstr = new String(out.toByteArray());
         assertEquals(exitcode, 0, outstr);
         return outstr;

@@ -44,7 +44,7 @@ public class SshCliToolIntegrationTest extends SshToolIntegrationTest {
             ByteArrayOutputStream err = new ByteArrayOutputStream();
             props.put("out", out);
             props.put("err", err);
-            int exitcode = localtool.execScript(props, Arrays.asList("echo hello err > /dev/stderr"), null);
+            int exitcode = localtool.getBashHelper().execScript(localtool, props, Arrays.asList("echo hello err > /dev/stderr"), null);
             Assert.assertEquals(0, exitcode, "exitCode="+exitcode+", but expected 0");
             log.debug("OUT from ssh -vvv command is: "+out);
             log.debug("ERR from ssh -vvv command is: "+err);
@@ -70,7 +70,7 @@ public class SshCliToolIntegrationTest extends SshToolIntegrationTest {
         tools.add(localtool);
         try {
             localtool.connect();
-            int result = localtool.execScript(ImmutableMap.<String,Object>of(), ImmutableList.of("date"));
+            int result = localtool.getBashHelper().execScript(localtool, ImmutableMap.<String,Object>of(), ImmutableList.of("date"));
             fail("exitCode="+result+", but expected exception");
         } catch (SshException e) {
             if (!e.toString().contains("failed to connect")) throw e;

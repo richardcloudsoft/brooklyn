@@ -276,7 +276,7 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
         if (commands == null || commands.isEmpty()) return 0;
         return execSsh(props, new Function<SshTool, Integer>() {
             public Integer apply(SshTool ssh) {
-                return ssh.execScript(props, commands, env);
+                return ssh.getBashHelper().execScript(ssh, props, commands, env);
             }});
     }
 
@@ -377,7 +377,7 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
         if (commands == null || commands.isEmpty()) return 0;
         return execSsh(props, new Function<SshTool, Integer>() {
             public Integer apply(SshTool ssh) {
-                return ssh.execCommands(props, commands, env);
+                return ssh.getBashHelper().execCommands(ssh, props, commands, env);
             }});
     }
         
@@ -419,7 +419,7 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
     public int execCommands(Map<String,?> props, String summaryForLogging, List<String> commands, Map<String,?> env) {
         return execWithLogging(props, summaryForLogging, commands, env, new ExecRunner() {
                 @Override public int exec(SshTool ssh, Map<String,?> flags, List<String> cmds, Map<String,?> env) {
-                    return ssh.execCommands(flags, cmds, env);
+                    return ssh.getBashHelper().execCommands(ssh, flags, cmds, env);
                 }});
     }
 
@@ -441,7 +441,7 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
     public int execScript(Map<String,?> props, String summaryForLogging, List<String> commands, Map<String,?> env) {
         return execWithLogging(props, summaryForLogging, commands, env, new ExecRunner() {
                 @Override public int exec(SshTool ssh, Map<String, ?> flags, List<String> cmds, Map<String, ?> env) {
-                    return ssh.execScript(flags, cmds, env);
+                    return ssh.getBashHelper().execScript(ssh, flags, cmds, env);
                 }});
     }
 
