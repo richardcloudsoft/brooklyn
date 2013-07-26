@@ -208,12 +208,13 @@ public class SshjTool extends SshAbstractTool implements SshTool {
 
     @Override
     public int executeCommand(Map<String, ?> props, String singlecmd) {
+        InputStream in = getOptionalVal(props, PROP_IN_STREAM);
         OutputStream out = getOptionalVal(props, PROP_OUT_STREAM);
         OutputStream err = getOptionalVal(props, PROP_ERR_STREAM);
 
         if (LOG.isTraceEnabled()) LOG.trace("Running command at {}: {}", host, singlecmd);
 
-        Command result = acquire(new ExecAction(singlecmd, out, err));
+        Command result = acquire(new ExecAction(singlecmd, in, out, err));
         if (LOG.isTraceEnabled()) LOG.trace("Running command at {} completed: exit code {}", host, result.getExitStatus());
         // FIXME this can NPE if no exit status is received (observed on kill `ps aux | grep thing-to-grep-for | awk {print $2}`
         return result.getExitStatus();
@@ -503,13 +504,16 @@ public class SshjTool extends SshAbstractTool implements SshTool {
         
         private Session session;
         private Shell shell;
+        private StreamGobbler ingobbler;
         private StreamGobbler outgobbler;
         private StreamGobbler errgobbler;
+        private InputStream in;
         private OutputStream out;
         private OutputStream err;
 
-        ExecAction(String command, OutputStream out, OutputStream err) {
+        ExecAction(String command, InputStream in, OutputStream out, OutputStream err) {
             this.command = checkNotNull(command, "command");
+            this.in = in;
             this.out = out;
             this.err = err;
         }
@@ -518,6 +522,7 @@ public class SshjTool extends SshAbstractTool implements SshTool {
         public void clear() throws TransportException, ConnectionException {
             closeWhispering(session, this);
             closeWhispering(shell, this);
+            closeWhispering(ingobbler, this);
             closeWhispering(outgobbler, this);
             closeWhispering(errgobbler, this);
             session = null;
@@ -530,7 +535,11 @@ public class SshjTool extends SshAbstractTool implements SshTool {
                 session = acquire(newSessionAction());
                 
                 Command output = session.exec(checkNotNull(command, "command"));
-                
+
+                if (in != null) {
+                    ingobbler = new StreamGobbler(in, output.getOutputStream(), (Logger)null);
+                    ingobbler.start();
+                }
                 if (out != null) {
                     outgobbler = new StreamGobbler(output.getInputStream(), out, (Logger)null);
                     outgobbler.start();

@@ -59,6 +59,7 @@ public interface SshTool {
 
     public static final ConfigKey<Boolean> PROP_RUN_AS_ROOT = newConfigKey("runAsRoot", "When running a script, whether to run as root", Boolean.FALSE);
     
+    public static final ConfigKey<InputStream> PROP_IN_STREAM = newConfigKey(InputStream.class, "in", "Stream to use as stdin source");
     public static final ConfigKey<OutputStream> PROP_OUT_STREAM = newConfigKey(OutputStream.class, "out", "Stream to which to capture stdout");
     public static final ConfigKey<OutputStream> PROP_ERR_STREAM = newConfigKey(OutputStream.class, "err", "Stream to which to capture stderr");
     
