@@ -688,6 +688,7 @@
                 <module>sandbox/dropwizard</module>
                 <module>sandbox/camp</module>
                 <module>sandbox/nosql</module>
+                <module>sandbox/windows</module>
             </modules>
         </profile>
 

@@ -3,6 +3,7 @@ package brooklyn.location.basic;
 import static brooklyn.util.GroovyJavaMethods.truth;
 import groovy.lang.Closure;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,6 +19,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +46,7 @@ import brooklyn.util.config.ConfigBag;
 import brooklyn.util.exceptions.Exceptions;
 import brooklyn.util.flags.SetFromFlag;
 import brooklyn.util.flags.TypeCoercions;
+import brooklyn.util.internal.ssh.PowerShellTranslator;
 import brooklyn.util.internal.ssh.SshException;
 import brooklyn.util.internal.ssh.SshTool;
 import brooklyn.util.internal.ssh.sshj.SshjTool;
@@ -377,10 +381,28 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
         if (commands == null || commands.isEmpty()) return 0;
         return execSsh(props, new Function<SshTool, Integer>() {
             public Integer apply(SshTool ssh) {
-                return ssh.getBashHelper().execCommands(ssh, props, commands, env);
+                if (isWindows()) {
+                    return PowerShellTranslator.INSTANCE.execCommands(ssh, props, commands, env);
+                } else {
+                    return ssh.getBashHelper().execCommands(ssh, props, commands, env);
+                }
             }});
     }
-        
+
+    private Boolean isWindows;
+
+    private synchronized boolean isWindows() {
+        if (isWindows == null) {
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            Map<String, ?> properties = ImmutableMap.of(SshTool.PROP_OUT_STREAM.getName(), stdout);
+            connectSsh().executeCommand(properties, "ver");
+            Pattern pattern = Pattern.compile("^\\s*Microsoft\\s+Windows", Pattern.DOTALL);
+            Matcher matcher = pattern.matcher(stdout.toString());
+            isWindows = matcher.find();
+        }
+        return isWindows;
+    }
+
     // TODO submitCommands and submitScript which submit objects we can subsequently poll (cf JcloudsSshMachineLocation.submitRunScript)
     
     /** executes a set of commands, directly on the target machine (no wrapping in script).
@@ -419,7 +441,11 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
     public int execCommands(Map<String,?> props, String summaryForLogging, List<String> commands, Map<String,?> env) {
         return execWithLogging(props, summaryForLogging, commands, env, new ExecRunner() {
                 @Override public int exec(SshTool ssh, Map<String,?> flags, List<String> cmds, Map<String,?> env) {
-                    return ssh.getBashHelper().execCommands(ssh, flags, cmds, env);
+                    if (isWindows()) {
+                        return PowerShellTranslator.INSTANCE.execCommands(ssh, flags, cmds, env);
+                    } else {
+                        return ssh.getBashHelper().execCommands(ssh, flags, cmds, env);
+                    }
                 }});
     }
 
@@ -441,7 +467,11 @@ public class SshMachineLocation extends AbstractLocation implements MachineLocat
     public int execScript(Map<String,?> props, String summaryForLogging, List<String> commands, Map<String,?> env) {
         return execWithLogging(props, summaryForLogging, commands, env, new ExecRunner() {
                 @Override public int exec(SshTool ssh, Map<String, ?> flags, List<String> cmds, Map<String, ?> env) {
-                    return ssh.getBashHelper().execScript(ssh, flags, cmds, env);
+                    if (isWindows()) {
+                        return PowerShellTranslator.INSTANCE.execScript(ssh, flags, cmds, env);
+                    } else {
+                        return ssh.getBashHelper().execScript(ssh, flags, cmds, env);
+                    }
                 }});
     }
 
