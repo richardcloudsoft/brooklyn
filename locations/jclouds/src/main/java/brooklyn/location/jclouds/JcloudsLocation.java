@@ -881,8 +881,14 @@ public class JcloudsLocation extends AbstractCloudMachineProvisioningLocation im
                         } else if (t instanceof GoogleComputeEngineTemplateOptions) {
                             String[] securityGroups = toStringArray(v);
                             ((GoogleComputeEngineTemplateOptions)t).securityGroups(securityGroups);
+                        } else if (t instanceof CloudStackTemplateOptions) {
+                            String[] securityGroups = toStringArray(v);
+                            ((CloudStackTemplateOptions)t).securityGroups(Arrays.asList(securityGroups));
+                            LOG.info("Setting securityGroups({}) for cloud/type ({})", v, t.getClass());
                         } else {
-                            LOG.info("ignoring securityGroups({}) in VM creation because not supported for cloud/type ({})", v, t.getClass());
+                            String[] securityGroups = toStringArray(v);
+                            t.securityGroups(Arrays.asList(securityGroups));
+                            LOG.info("Default securityGroups({}) in VM creation *might* not be supported for cloud/type ({})", v, t.getClass());
                         }
                     }})
             .put(INBOUND_PORTS, new CustomizeTemplateOptions() {
