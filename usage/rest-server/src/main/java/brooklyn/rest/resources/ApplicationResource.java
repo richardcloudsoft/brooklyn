@@ -9,9 +9,12 @@ import io.brooklyn.camp.spi.Assembly;
 import io.brooklyn.camp.spi.AssemblyTemplate;
 import io.brooklyn.camp.spi.instantiate.AssemblyTemplateInstantiator;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -24,6 +27,10 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
@@ -216,6 +223,34 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
   
   @Override
   public Response createFromYaml(String yaml) {
+      // First of all, see if it's a URL
+      URI uri;
+      try {
+          uri = new URI(yaml);
+      } catch (URISyntaxException e) {
+          // It's not a URI then...
+          uri = null;
+      }
+      if (uri != null) {
+          log.debug("Input to createFromYaml might be a URL: " + uri);
+          DefaultHttpClient httpClient = new DefaultHttpClient();
+          HttpGet request = new HttpGet(uri);
+          HttpResponse response = null;
+          try {
+              response = httpClient.execute(request);
+              if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                  ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                  response.getEntity().writeTo(byteArrayOutputStream);
+                  
+                  // We re-set our input to be the contents of the URL, and "fall through" to the JSON/YAML parsing
+                  yaml = byteArrayOutputStream.toString();
+                  log.debug("Continuing using the contents of the URL: {}", yaml);
+              }
+          } catch (IOException e) {
+              log.debug("Could not retrieve from URL due to exception, proceeding to treat as YAML", e);
+          }
+      }
+
       log.debug("Creating app from yaml");
       Reader input = new StringReader(yaml);
       AssemblyTemplate at = camp().pdp().registerDeploymentPlan(input);
