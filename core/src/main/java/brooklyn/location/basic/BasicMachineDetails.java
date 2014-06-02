@@ -14,6 +14,7 @@ import javax.annotation.concurrent.Immutable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import brooklyn.entity.basic.BrooklynTaskTags;
 import brooklyn.location.HardwareDetails;
 import brooklyn.location.MachineDetails;
 import brooklyn.location.OsDetails;
@@ -77,10 +78,11 @@ public class BasicMachineDetails implements MachineDetails {
      * #taskForSshMachineLocation(SshMachineLocation)} instead.
      */
     static BasicMachineDetails forSshMachineLocation(SshMachineLocation location) {
-        return DynamicTasks.queueIfPossible(taskForSshMachineLocation(location))
+        Task<BasicMachineDetails> task = DynamicTasks.queueIfPossible(taskForSshMachineLocation(location))
                 .orSubmitAsync()
-                .asTask()
-                .getUnchecked();
+                .asTask();
+        BrooklynTaskTags.setInessential(task);
+        return task.getUnchecked();
     }
 
     /**
