@@ -1,6 +1,7 @@
 package brooklyn.entity.rebind;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 import java.util.List;
@@ -211,6 +212,18 @@ public class RebindLocationTest extends RebindTestFixtureWithApp {
         assertEquals(newLoc.myfield, "myval");
     }
 
+    @Test
+    public void testReboundConfigDoesNotContainId() throws Exception {
+        MyLocation origLoc = origManagementContext.getLocationManager().createLocation(LocationSpec.create(MyLocation.class));
+        origApp.start(ImmutableList.of(origLoc));
+
+        newApp = (TestApplication) rebind();
+        MyLocation newLoc = (MyLocation) Iterables.get(newApp.getLocations(), 0);
+
+        assertNull(newLoc.getAllConfigBag().getStringKey("id"));
+        assertEquals(newLoc.getId(), origLoc.getId());
+    }
+    
     public static class MyOldStyleLocation extends AbstractLocation {
         private static final long serialVersionUID = 1L;
         
