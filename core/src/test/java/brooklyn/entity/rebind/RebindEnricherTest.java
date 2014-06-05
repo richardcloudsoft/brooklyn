@@ -1,7 +1,9 @@
 package brooklyn.entity.rebind;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 import java.util.Map;
 
@@ -156,6 +158,32 @@ public class RebindEnricherTest extends RebindTestFixtureWithApp {
 
         assertNull(newEnricher.getConfig(ConfigKeys.newStringConfigKey("id")));
         assertEquals(newEnricher.getId(), policy.getId());
+    }
+    
+    @Test
+    public void testIsRebinding() throws Exception {
+        origApp.addEnricher(EnricherSpec.create(EnricherChecksIsRebinding.class));
+
+        newApp = (TestApplication) rebind();
+        EnricherChecksIsRebinding newEnricher = (EnricherChecksIsRebinding) Iterables.getOnlyElement(newApp.getEnrichers());
+
+        assertTrue(newEnricher.isRebindingValWhenRebinding());
+        assertFalse(newEnricher.isRebinding());
+    }
+    
+    public static class EnricherChecksIsRebinding extends AbstractEnricher {
+        boolean isRebindingValWhenRebinding;
+        
+        public boolean isRebindingValWhenRebinding() {
+            return isRebindingValWhenRebinding;
+        }
+        @Override public boolean isRebinding() {
+            return super.isRebinding();
+        }
+        @Override public void rebind() {
+            super.rebind();
+            isRebindingValWhenRebinding = isRebinding();
+        }
     }
     
     public static class MyEnricher extends AbstractEnricher {
