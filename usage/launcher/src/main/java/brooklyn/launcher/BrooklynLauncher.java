@@ -111,6 +111,7 @@ public class BrooklynLauncher {
     private Duration persistPeriod = Duration.ONE_SECOND;
     private Duration haHeartbeatTimeout = Duration.THIRTY_SECONDS;
     private Duration haHeartbeatPeriod = Duration.ONE_SECOND;
+    private boolean noPersistenceBackup = false;
     
     private volatile BrooklynWebServer webServer;
     private CampPlatform campPlatform;
@@ -358,6 +359,11 @@ public class BrooklynLauncher {
         this.haHeartbeatPeriod = val;
         return this;
     }
+
+    public BrooklynLauncher noPersistenceBackup(boolean noPersistenceBackup) {
+        this.noPersistenceBackup = noPersistenceBackup;
+        return this;
+    }
     
     /**
      * Starts the web server (with web console) and Brooklyn applications, as per the specifications configured. 
@@ -556,11 +562,15 @@ public class BrooklynLauncher {
                 case REBIND:
                     checkPersistenceDirAccessible(dir);
                     checkPersistenceDirNonEmpty(dir);
-                    try {
-                        File backup = backupDirectory(dir);
-                        LOG.info("Persist-rebind using "+persistencePath+"; backed up directory to "+backup.getAbsolutePath());
-                    } catch (IOException e) {
-                        throw new FatalConfigurationRuntimeException("Error backing up persistence directory "+dir.getAbsolutePath(), e);
+                    if (!noPersistenceBackup) {
+                        try {
+                            File backup = backupDirectory(dir);
+                            LOG.info("Persist-rebind using " + persistencePath + "; backed up directory to " + backup.getAbsolutePath());
+                        } catch (IOException e) {
+                            throw new FatalConfigurationRuntimeException("Error backing up persistence directory " + dir.getAbsolutePath(), e);
+                        }
+                    } else {
+                        LOG.info("Persist-rebind using " + persistencePath + "; backup suppressed");
                     }
                     break;
                 case AUTO:
@@ -568,11 +578,15 @@ public class BrooklynLauncher {
                         checkPersistenceDirAccessible(dir);
                     }
                     if (dir.exists() && !isMementoDirEmpty(dir)) {
-                        try {
-                            File backup = backupDirectory(dir);
-                            LOG.info("Persist-auto will rebind using "+persistencePath+"; backed up directory to "+backup.getAbsolutePath());
-                        } catch (IOException e) {
-                            throw new FatalConfigurationRuntimeException("Error backing up persistence directory "+dir.getAbsolutePath(), e);
+                        if (!noPersistenceBackup) {
+                            try {
+                                File backup = backupDirectory(dir);
+                                LOG.info("Persist-auto will rebind using " + persistencePath + "; backed up directory to " + backup.getAbsolutePath());
+                            } catch (IOException e) {
+                                throw new FatalConfigurationRuntimeException("Error backing up persistence directory " + dir.getAbsolutePath(), e);
+                            }
+                        } else {
+                            LOG.info("Persist-auto will rebind using " + persistencePath + "; backup suppressed");
                         }
                     } else {
                         LOG.info("Persist-auto using fresh "+persistencePath+"; no pre-existing persisted data");
@@ -709,7 +723,6 @@ public class BrooklynLauncher {
             }
         }
     }
-    
     static File backupDirectory(File dir) throws IOException, InterruptedException {
         File parentDir = dir.getParentFile();
         String simpleName = dir.getName();

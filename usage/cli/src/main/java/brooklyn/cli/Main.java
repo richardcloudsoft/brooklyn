@@ -285,6 +285,15 @@ public class Main {
                         "master: will startup as master - if there is already a master then fails immediately; \n"+
                         "standby: will start up as standby - if there is not already a master then fails immediately")
         public String highAvailability = HA_OPTION_AUTO;
+        
+        final static String NO_PERSISTENCE_BACKUP = "--noPersistenceBackup";
+        @Option(name = { NO_PERSISTENCE_BACKUP},
+                title = "Suppress backup of the persistence directory",
+                description = "Normal behaviour when persistence is enabled is to make a backup of the persistence" +
+                        " directory. Setting this option prevents that happening. This may be useful if you are" +
+                        " intentionally starting a standby node which will not be making any changes to the" +
+                        " persisted data.")
+        public boolean noPersistenceBackup;
 
         @VisibleForTesting
         protected ManagementContext explicitManagementContext;
@@ -331,6 +340,8 @@ public class Main {
                 }
                 
                 launcher.highAvailabilityMode(highAvailabilityMode);
+                
+                launcher.noPersistenceBackup(noPersistenceBackup);
 
             } catch (FatalConfigurationRuntimeException e) {
                 throw e;
